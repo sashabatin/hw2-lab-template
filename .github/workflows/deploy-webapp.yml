@@ -1,0 +1,37 @@
+name: Deploy .NET MVC to Azure Web App
+
+on:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "infra/**"
+      - "README.md"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "6.0.x"
+
+      # Point to your web project csproj (adjust path if different)
+      - name: Restore
+        run: dotnet restore src/ContosoUniversity.WebApplication/ContosoUniversity.WebApplication.csproj
+
+      - name: Build
+        run: dotnet build src/ContosoUniversity.WebApplication/ContosoUniversity.WebApplication.csproj --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish src/ContosoUniversity.WebApplication/ContosoUniversity.WebApplication.csproj --configuration Release --no-build --output ./publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: hw2-web-dev
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: ./publish
