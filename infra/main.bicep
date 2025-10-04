@@ -14,7 +14,6 @@ param location string
 //      "value": "myGroupName"
 // }
 param apiServiceName string = ''
-param applicationInsightsDashboardName string = ''
 param applicationInsightsName string = ''
 param appServicePlanName string = ''
 param keyVaultName string = ''
@@ -142,33 +141,6 @@ module monitoring './core/monitor/monitoring.bicep' = {
     tags: tags
     logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
-    applicationInsightsDashboardName: !empty(applicationInsightsDashboardName) ? applicationInsightsDashboardName : '${abbrs.portalDashboards}${resourceToken}'
-  }
-}
-
-module loadtest './app/loadtest.bicep' = {
-  name: 'loadtest'
-  scope: rg
-  params: {
-    name: 'loadtest-${resourceToken}'
-    location: location
-  }
-}
-
-//  Telemetry Deployment
-@description('Enable usage and telemetry feedback to Microsoft.')
-var telemetryId = '69ef933a-eff0-450b-8a46-331cf62e160f-NETWEB-${location}'
-
-resource telemetrydeployment 'Microsoft.Resources/deployments@2021-04-01' = if (enableTelemetry) {
-  name: telemetryId
-  location: location
-  properties: {
-    mode: 'Incremental'
-    template: {
-      '$schema': 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#'
-      contentVersion: '1.0.0.0'
-      resources: {}
-    }
   }
 }
 
@@ -181,5 +153,3 @@ output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.endpoint
 output AZURE_KEY_VAULT_NAME string = keyVault.outputs.name
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
-output AZURE_LOAD_TEST_NAME string = loadtest.name
-output AZURE_LOAD_TEST_HOST string = web.outputs.SERVICE_WEB_HOSTNAME
