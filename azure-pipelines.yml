@@ -9,9 +9,11 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   dotnetVersion: '6.0.300'      # Matches your global.json requirement
+  webProjectPath: 'src/ContosoUniversity.WebApplication/ContosoUniversity.WebApplication.csproj'
+  testUrl: 'http://localhost:5000' # Where UI tests will navigate to
 
 steps:
-# 1. Use required .NET SDK to avoid SDK mismatch errors
+# 1. Install required .NET SDK to avoid SDK mismatch errors
 - task: UseDotNet@2
   displayName: 'Install .NET SDK $(dotnetVersion)'
   inputs:
@@ -29,7 +31,7 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
 
-# 4. Build using MSBuild for .NET Framework projects
+# 4. Build solution using MSBuild (for .NET Framework projects inside)
 - task: VSBuild@1
   displayName: 'Build solution'
   inputs:
@@ -38,14 +40,22 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-# 5. Run tests
+# 5. Run the web app in the background so Selenium/ChromeDriver can access it
+- script: |
+    echo "Starting web app in background..."
+    dotnet run --project $(webProjectPath) --urls "$(testUrl)" &
+    echo "Waiting 10 seconds to ensure the app is up..."
+    sleep 10
+  displayName: 'Start ContosoUniversity Web App'
+
+# 6. Run all tests (unit + UI/Selenium)
 - task: VSTest@2
-  displayName: 'Run unit tests'
+  displayName: 'Run tests (including UI tests)'
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-# 6. Publish build artifacts
+# 7. Publish build artifacts
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Build Artifacts'
   inputs:
